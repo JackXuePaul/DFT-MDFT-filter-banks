@@ -1,21 +1,16 @@
 %%
-%信号构建
 clear all;
 close all;
-%load profltrm6M60.mat;
-%load filcoe.mat;
-
-%[au,FS] = audioread('input1.wav');xx = (au(:,1))';
 load initial_coefficients.mat;
 
-fs = 10e5;                   %采样频率
+fs = 10e5;                   %sampling frequency
 fc = fs/2;
-M = 64;                     % 通道数
-I=2;                     %oversample ratio
-K=M*I;                   %number of channels
-T = 0.1;                        %采样时间
+M = 64;                     %the factor of downsampling(upsampling)
+I=2;                        %oversample ratio
+K=M*I;                      %number of channels
+T = 0.1;                    %Sampling time
 tt = 1/fs:(1/fs):(T+(2*M-mod(fs*T,2*M))*1/fs);
-xx = 2*cos(2*pi*fc/M*3.5*tt)+cos(2*pi*fc/M*8.0*tt);%+0.8*cos(2*pi*fc/M*2.3*t);%+randn(size(t))*0.01;
+xx = 2*cos(2*pi*fc/M*3.5*tt)+cos(2*pi*fc/M*8.0*tt);   %input signal
 lx=length(xx);
 XX=zeros(K,lx);
 X=zeros(K,lx/K);
@@ -24,11 +19,11 @@ X=reshape(xx,K,lx/K);
 %%
 %滤波器设计
 disp('design prototype filter ...');
-m = 8;                   %m决定滤波器长度
-E = 1e-8;                   %迭代终止条件kesi
-a = 1e5;                    %通阻带能量比               
+m = 8;                      %m detemines the length of filter
+E = 1e-8;                   
+a = 1e5;                    %the energy ratio of passband and stopband               
 t = 0.6;
-N = 2*m*M;                  %滤波器长度
+N = 2*m*M;                  %length of filter
 F=10; L = 2*F*M;
 freq_vector = linspace (0, pi, L);
 Ut = zeros(F,N/2);
@@ -50,14 +45,13 @@ Q = mU'*mU;
 b_vector = fcoe;
 h_n_m = b_vector(1,1:N/2)';
 Error = 0.01;
-c = 0;          %迭代次数
+c = 0;          %number of iterations
 while (Error>E)
     U = diag(Ut*h_n_m)*Ut+diag(Us*h_n_m)*Us;
     g_n_m = (U'*U+a*Q)\U'*ones (F, 1);
     h_n_m = (1-t)*h_n_m+t*g_n_m;
     Error = norm (h_n_m-g_n_m)/norm (h_n_m);
     c = c+1;
-%     fprintf('第%d迭代误差： %e \n',c,Error);
 end
 h = [h_n_m;fliplr(eye(N/2))*h_n_m];
 h=h';
@@ -65,7 +59,7 @@ h=K*h;
 lh=length(h);
 
 %%
-%多相
+%multiphase filters
 % s=floor(lh/M/2);
 % d=2*M-1;
 % D=2*s*M+d;     %delay time
@@ -76,7 +70,7 @@ lh=length(h);
 % end
 %  tic;
 P=zeros(K,lh);
-p=zeros(K,lh/M);    %analysis polyphase fillters
+p=zeros(K,lh/M);       %analysis polyphase fillters
 pk=zeros(2*K,lh/K);    %polyphase of polyphase
 px=zeros(2*K,lx/K);
 Y=zeros(K,lx/M);
@@ -142,14 +136,11 @@ for i = 1:K
     RX(i,:)=YY(2*i-1,:)+YY(2*i,:);
 end
 
-r_x=reshape(RX,1,lx);
-% toc;
-% figure(1)
-% plot(abs(fft(xx)));
-% figure(2)
-% plot(abs(fft(r_x)));
-figure();plot(abs(fft(y(3,:))));
-%figure();pwelch(hk(1,:));
-%figure();pwelch(XX(1,:));
-%figure();pwelch(hk(3,:),[],[],[],fs);
-%figure();pwelch(XX(1,:),[],[],[],fs);
+r_x=reshape(RX,1,lx); %reconstruct signal;
+
+figure();
+plot(abs(fft(xx)));
+figure();
+plot(abs(fft(r_x)));
+
+
